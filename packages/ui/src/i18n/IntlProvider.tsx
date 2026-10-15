@@ -368,7 +368,7 @@ export function ZCodeIntlProvider({
 export function useZCodeIntl(): IntlContextValue {
   const ctx = useContext(IntlContext);
   if (!ctx) {
-    throw new Error("useZCodeIntl 必须在 ZCodeIntlProvider 内使用");
+    throw new Error("useZCodeIntl 必须在应用国际化 Provider 内使用");
   }
   return ctx;
 }

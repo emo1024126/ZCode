@@ -55,11 +55,17 @@ function isTruthyRuntimeEnvOverride(name: string): boolean {
   return value === "1" || value === "true" || value === "yes" || value === "on";
 }
 
-// e2e 运行的是生产构建，默认会和本机正式版 ZCode 共用 app name / userData，
+// e2e 运行的是生产构建，默认会和本机正式版 Codex 共用 app name / userData，
 // 触发 Electron 单实例锁后只激活已有窗口，Chromedriver 无法接管测试进程。
 // 这里允许测试显式隔离运行时身份，正常桌面/远控路径保持原来的默认值。
+const runtimeApplicationNameOverride = readRuntimeEnvOverride("ZCODE_DESKTOP_APPLICATION_NAME");
 export const runtimeApplicationName =
-  readRuntimeEnvOverride("ZCODE_DESKTOP_APPLICATION_NAME") ??
+  runtimeApplicationNameOverride ??
+  (isLocalDevelopmentRuntime ? "Codex Dev" : isPreviewPackagedRuntime ? "Codex Preview" : "Codex");
+// 显示名称改名不能让既有正式版数据目录失效；正式版继续使用旧目录，Preview/开发态保持隔离。
+const runtimeUserDataDirectoryName =
+  readRuntimeEnvOverride("ZCODE_DESKTOP_USER_DATA_DIRECTORY_NAME") ??
+  runtimeApplicationNameOverride ??
   (isLocalDevelopmentRuntime ? "ZCode Dev" : isPreviewPackagedRuntime ? "ZCode Preview" : "ZCode");
 // Electron 的 app.getPath("home") 不一定跟随测试进程里的 HOME 覆盖。
 // e2e 默认工作区依赖 home 路径，因此提供显式覆盖，避免测试写到开发者真实 ~/ZCodeProject。
@@ -72,7 +78,7 @@ export const runtimeUserDataPath =
   readRuntimeEnvOverride("ZCODE_DESKTOP_USER_DATA_DIR") ??
   (shouldUseElectronDefaultUserDataPath
     ? undefined
-    : join(getElectronAppPath("appData"), runtimeApplicationName));
+    : join(getElectronAppPath("appData"), runtimeUserDataDirectoryName));
 export const runtimeSessionDataPath =
   readRuntimeEnvOverride("ZCODE_DESKTOP_SESSION_DATA_DIR") ??
   (runtimeUserDataPath ? join(runtimeUserDataPath, "session") : undefined);

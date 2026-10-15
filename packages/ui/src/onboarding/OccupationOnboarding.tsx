@@ -34,12 +34,15 @@ async function appendOnboardingRecord(
 
 export function OccupationOnboarding({
   children,
+  autoOpenOnFirstRun = true,
   showWindowControls = false,
   showChildrenWhileLoading = false,
   isMacDesktop,
   isWindowsDesktop,
 }: {
   children: ReactNode;
+  /** 首次启动是否自动显示职业引导；设置页仍可通过 store 请求手动打开。 */
+  autoOpenOnFirstRun?: boolean;
   /** Windows/Linux 自绘窗控：引导全屏覆盖主界面（含标题栏），需在此补最小化/最大化/关闭。 */
   showWindowControls?: boolean;
   /** 独立设置页不依赖引导设置加载，避免应用级引导外层遮住设置内容。 */
@@ -79,7 +82,8 @@ export function OccupationOnboarding({
     hasStoredOccupation: Boolean(settings?.onboardingOccupation),
     update,
   });
-  const onboardingVisible = requested || (needsOnboarding === true && !dismissed);
+  const onboardingVisible =
+    requested || (autoOpenOnFirstRun && needsOnboarding === true && !dismissed);
   const captureEnd = useOnboardingTelemetry({
     platform,
     visible:
@@ -209,7 +213,13 @@ export function OccupationOnboarding({
   // 判定进行中先不渲染，避免引导闪现后立即消失（判定为需引导）或先闪引导再进主界面。
   // 只有疑似首跑（settings 里也没有职业）才等待记录判定；存量用户（已有
   // onboardingOccupation）不等 RPC 直接进主界面，杜绝黑屏。
-  if (!requested && needsOnboarding === null && !settings.onboardingOccupation) return null;
+  if (
+    autoOpenOnFirstRun &&
+    !requested &&
+    needsOnboarding === null &&
+    !settings.onboardingOccupation
+  )
+    return null;
   if (!onboardingVisible) return <>{children}</>;
   const save = async (skip = false) => {
     if (savingRef.current) return;
